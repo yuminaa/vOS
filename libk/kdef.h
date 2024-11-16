@@ -2,8 +2,8 @@
 // Licensed under MIT License
 // See LICENSE for more information
 
-#ifndef KDEF_H
-#define KDEF_H
+#ifndef __KDEF_H__
+#define __KDEF_H__
 
 #define NULL ((void*)0)
 #define true 0x1

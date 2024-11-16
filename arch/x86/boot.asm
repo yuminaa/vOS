@@ -8,12 +8,12 @@
 [BITS 16]
 [ORG 0x7C00]
 
-KERNEL_OFFSET_HIGH  equ 0xFFFF_FFFF_8000_0000
+KERNEL_OFFSET_HIGH  equ 0xFFFFFFFF80000000
 KERNEL_LOAD_SEGMENT equ 0x1000
 KERNEL_LOAD_OFFSET  equ 0x0000
 KERNEL_OFFSET_LOW   equ (KERNEL_LOAD_SEGMENT << 4) + KERNEL_LOAD_OFFSET
 
-start:
+boot_init:
     ; Set up segments and stack
     xor ax, ax
     mov ds, ax
@@ -116,7 +116,7 @@ halt:
 
 align 16
 gdt_start:
-    dq 0                    ; Null descriptor
+    dq 0                   ; Null descriptor
     dq 0x00CF9A000000FFFF  ; 32-bit code
     dq 0x00CF92000000FFFF  ; 32-bit data
 gdt_end:

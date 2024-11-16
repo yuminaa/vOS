@@ -2,8 +2,8 @@
 // Licensed under MIT License
 // See LICENSE for more information
 
-#ifndef KMEMORY_H
-#define KMEMORY_H
+#ifndef __KMEMORY_H__
+#define __KMEMORY_H__
 
 #include "kdef.h"
 

@@ -2,8 +2,8 @@
 // Licensed under MIT License
 // See LICENSE for more information
 
-#ifndef KSTRING_H
-#define KSTRING_H
+#ifndef __KSTRING_H__
+#define __KSTRING_H__
 
 #include "kdef.h"
 
