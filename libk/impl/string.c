@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #define ONES     (~0UL/0xFF)
 #define HIGHS    (ONES * 0x80)
 #define HAS_ZERO(x) (((x) - ONES) & ~(x) & HIGHS)

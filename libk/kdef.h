@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #ifndef KDEF_H
 #define KDEF_H
 
