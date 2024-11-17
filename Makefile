@@ -1,4 +1,4 @@
-# Toolchain
+# TOOLCHAINS
 ARCH ?= x86_64
 AS = nasm
 CC = $(ARCH)-elf-gcc
@@ -6,106 +6,73 @@ LD = $(ARCH)-elf-ld
 OBJCOPY = $(ARCH)-elf-objcopy
 QEMU = qemu-system-$(ARCH)
 
-# Build configuration
-BUILD_TYPE ?= debug
-BUILD_DIR = build/$(BUILD_TYPE)
+# FLAGS
+NASMFLAGS = -f elf64
+NASMFLAGS_BIN = -f bin
+CFLAGS = -ffreestanding -nostdlib -mno-red-zone -Wall -Wextra -O3 -mcmodel=kernel -Ilibk
+LDFLAGS = -T arch/x86/linker.ld -nostdlib
 
-# Directories
+# DIRECTORIES
+BUILD_DIR = build
 ARCH_DIR = arch/x86
 KERNEL_DIR = kernel
 LIBK_DIR = libk
 
-# Common flags
-NASMFLAGS = -f elf64
-NASMFLAGS_BIN = -f bin
-
-# Debug/Release specific flags
-ifeq ($(BUILD_TYPE),debug)
-    CFLAGS_BUILD = -g -O0 -DDEBUG
-    QEMU_FLAGS = -s -S
-else
-    CFLAGS_BUILD = -O2 -DNDEBUG
-    QEMU_FLAGS =
-endif
-
-# Compiler flags
-CFLAGS = -ffreestanding \
-         -nostdlib \
-         -mno-red-zone \
-         -Wall \
-         -Wextra \
-         -mcmodel=kernel \
-         -I$(LIBK_DIR) \
-         $(CFLAGS_BUILD)
-
-LDFLAGS = -T $(ARCH_DIR)/linker.ld -nostdlib
-
-# Source files
-BOOT_SRC = $(ARCH_DIR)/boot.asm
+# SOURCE FILES
+BOOT_SRC = $(ARCH_DIR)/boot/first.asm $(ARCH_DIR)/boot/second.asm
+KERNEL_ENTRY = $(ARCH_DIR)/entry.asm
 KERNEL_SRC = $(KERNEL_DIR)/kernel.c
 LIBK_SRC = $(wildcard $(LIBK_DIR)/impl/*.c)
 
-# Object files
-BOOT_OBJ = $(BUILD_DIR)/boot.o
+# OBJECT FILES
 KERNEL_OBJ = $(BUILD_DIR)/kernel.o
-LIBK_OBJ = $(patsubst $(LIBK_DIR)/impl/%.c,$(BUILD_DIR)/%.o,$(LIBK_SRC))
+LIBK_OBJ = $(patsubst $(LIBK_DIR)/impl/%.c, $(BUILD_DIR)/%.o, $(LIBK_SRC))
+ENTRY_OBJ = $(BUILD_DIR)/entry.o
 
-# Output files
+# OUTPUT FILES
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 KERNEL_ELF = $(BUILD_DIR)/kernel.elf
-BOOT_BIN = $(BUILD_DIR)/boot.bin
-DISK_IMG = $(BUILD_DIR)/disk.img
+BOOTLOADER_IMG = $(BUILD_DIR)/disk.img
 
-all: $(DISK_IMG)
+all: $(BOOTLOADER_IMG)
 
-# Create build directory structure
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Compile bootloader to raw binary
-$(BOOT_BIN): $(BOOT_SRC) | $(BUILD_DIR)
+$(BUILD_DIR)/first.bin: $(ARCH_DIR)/boot/first.asm | $(BUILD_DIR)
 	$(AS) $(NASMFLAGS_BIN) $< -o $@
 
-# Compile kernel source
-$(KERNEL_OBJ): $(KERNEL_SRC) | $(BUILD_DIR)
+$(BUILD_DIR)/second.bin: $(ARCH_DIR)/boot/second.asm | $(BUILD_DIR)
+	$(AS) $(NASMFLAGS_BIN) $< -o $@
+
+$(BUILD_DIR)/entry.o: $(ARCH_DIR)/entry.asm | $(BUILD_DIR)
+	$(AS) $(NASMFLAGS) $< -o $@
+
+$(BUILD_DIR)/kernel.o: $(KERNEL_DIR)/kernel.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile libk sources
 $(BUILD_DIR)/%.o: $(LIBK_DIR)/impl/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Link kernel
-$(KERNEL_ELF): $(KERNEL_OBJ) $(LIBK_OBJ) | $(BUILD_DIR)
+$(KERNEL_ELF): $(ENTRY_OBJ) $(KERNEL_OBJ) $(LIBK_OBJ) | $(BUILD_DIR)
 	$(LD) $(LDFLAGS) -o $@ $^
 
-# Convert kernel to binary
 $(KERNEL_BIN): $(KERNEL_ELF)
 	$(OBJCOPY) -O binary $< $@
 
-# Create disk image
-$(DISK_IMG): $(BOOT_BIN) $(KERNEL_BIN)
+$(BOOTLOADER_IMG): $(BUILD_DIR)/first.bin $(BUILD_DIR)/second.bin $(KERNEL_BIN)
 	dd if=/dev/zero of=$@ bs=512 count=2880
-	dd if=$(BOOT_BIN) of=$@ bs=512 seek=0 conv=notrunc
-	dd if=$(KERNEL_BIN) of=$@ bs=512 seek=1 conv=notrunc
+	dd if=$(BUILD_DIR)/first.bin of=$@ bs=512 seek=0 conv=notrunc
+	dd if=$(BUILD_DIR)/second.bin of=$@ bs=512 seek=1 conv=notrunc
+	dd if=$(KERNEL_BIN) of=$@ bs=512 seek=4 conv=notrunc
 
-# Clean specific build type
 clean:
 	rm -rf $(BUILD_DIR)
 
-# Clean all build types
-clean-all:
-	rm -rf build
+run: $(BOOTLOADER_IMG)
+	$(QEMU) -drive file=$(BOOTLOADER_IMG),format=raw -serial stdio
 
-# Run with specific build type
-run: $(DISK_IMG)
-	$(QEMU) -drive format=raw,file=$(DISK_IMG) $(QEMU_FLAGS)
+debug: $(BOOTLOADER_IMG)
+	$(QEMU) -drive file=$(BOOTLOADER_IMG),format=raw -serial stdio -S -gdb tcp::1234
 
-# Explicitly build and run debug version
-debug:
-	$(MAKE) BUILD_TYPE=debug run
-
-# Explicitly build and run release version
-release:
-	$(MAKE) BUILD_TYPE=release run
-
-.PHONY: all clean clean-all run debug release
+.PHONY: all clean run debug
