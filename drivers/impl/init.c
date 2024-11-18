@@ -68,15 +68,22 @@ void init_gdt(void)
     );
 }
 
-static void idt_set_gate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags)
+void idt_set_gate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags, uint8_t ist)
 {
     idt[num].base_low = base & 0xFFFF;
     idt[num].base_middle = (base >> 16) & 0xFFFF;
     idt[num].base_high = (base >> 32) & 0xFFFFFFFF;
     idt[num].selector = sel;
-    idt[num].ist = 0;
+    idt[num].ist = ist;          // Add this
     idt[num].flags = flags;
     idt[num].reserved = 0;
+}
+
+void set_ist(int ist_num, uint64_t stack)
+{
+    if (ist_num < 1 || ist_num > 7)
+        return;
+    tss.ist[ist_num - 1] = stack;
 }
 
 void init_idt() 
@@ -86,7 +93,7 @@ void init_idt()
 
     // Clear IDT
     for (int i = 0; i < IDT_ENTRIES; i++)
-        idt_set_gate(i, 0, 0x08, 0x8E);
+        idt_set_gate(i, 0, 0x08, 0x8E, 0);
     // Load IDT
     __asm__ volatile ("lidt %0" : : "m"(idtp));
 }
@@ -117,23 +124,23 @@ void init_cpu()
 
 void init_pic()
 {
-    // ICW1
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
+    // ICW1: Start initialization and tell PICs we will send ICW4
+    outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
+    outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
     
-    // ICW2: Vector offsets
-    outb(0x21, 0x20);    // Master: IRQ 0-7 mapped to interrupts 32-39
-    outb(0xA1, 0x28);    // Slave: IRQ 8-15 mapped to interrupts 40-47
+    // ICW2: Set vector offset
+    outb(PIC1_DATA, 0x20);    // IRQ 0-7: interrupts 32-39
+    outb(PIC2_DATA, 0x28);    // IRQ 8-15: interrupts 40-47
     
-    // ICW3: Cascading
-    outb(0x21, 0x04);    // Tell master there's a slave at IRQ2
-    outb(0xA1, 0x02);    // Tell slave its cascade identity
+    // ICW3: Configure cascading
+    outb(PIC1_DATA, 0x04);    // Tell Master PIC that there is a slave at IRQ2 (0000 0100)
+    outb(PIC2_DATA, 0x02);    // Tell Slave PIC its cascade identity (0000 0010)
     
-    // ICW4
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
+    // ICW4: Set 8086 mode
+    outb(PIC1_DATA, ICW4_8086);
+    outb(PIC2_DATA, ICW4_8086);
     
     // Mask all interrupts
-    outb(0x21, 0xFF);
-    outb(0xA1, 0xFF);
+    outb(PIC1_DATA, 0xFF);
+    outb(PIC2_DATA, 0xFF);
 }
