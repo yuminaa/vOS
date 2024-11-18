@@ -1,0 +1,12 @@
+TODO:
+1. Fix double fault handling
+   - Set up proper IST in TSS
+   - Configure emergency stacks
+   - Test double fault recovery
+
+2. Keyboard features
+   - Shift key support
+   - Caps lock
+   - Special keys
+   - Keyboard buffer
+   - Unicode
