@@ -9,7 +9,7 @@ QEMU = qemu-system-$(ARCH)
 # FLAGS
 NASMFLAGS = -f elf64
 NASMFLAGS_BIN = -f bin
-CFLAGS = -ffreestanding -nostdlib -mno-red-zone -Wall -Wextra -O3 -mcmodel=kernel -Ilibk -Idrivers -fno-pic -fno-pie
+CFLAGS = -ffreestanding -nostdlib -mno-red-zone -Wall -Wextra -O3 -mcmodel=kernel -Ilibk -Idrivers -Ikernel -fno-pic -fno-pie -mgeneral-regs-only
 LDFLAGS = -T arch/x86/linker.ld -nostdlib
 
 # DIRECTORIES
@@ -25,11 +25,13 @@ KERNEL_ENTRY = $(ARCH_DIR)/entry.asm
 KERNEL_SRC = $(KERNEL_DIR)/kernel.c
 LIBK_SRC = $(wildcard $(LIBK_DIR)/impl/*.c)
 DRIVERS_SRC = $(wildcard $(DRIVERS_DIR)/impl/*.c)
+KERNEL_COMPONENTS_SRC = $(wildcard $(KERNEL_DIR)/components/impl/*.c)
 
 # OBJECT FILES
 KERNEL_OBJ = $(BUILD_DIR)/kernel.o
 LIBK_OBJ = $(patsubst $(LIBK_DIR)/impl/%.c, $(BUILD_DIR)/%.o, $(LIBK_SRC))
 DRIVERS_OBJ = $(patsubst $(DRIVERS_DIR)/impl/%.c, $(BUILD_DIR)/driver_%.o, $(DRIVERS_SRC))
+KERNEL_COMPONENTS_OBJ = $(patsubst $(KERNEL_DIR)/components/impl/%.c, $(BUILD_DIR)/component_%.o, $(KERNEL_COMPONENTS_SRC))
 ENTRY_OBJ = $(BUILD_DIR)/entry.o
 
 # OUTPUT FILES
@@ -60,7 +62,10 @@ $(BUILD_DIR)/%.o: $(LIBK_DIR)/impl/%.c | $(BUILD_DIR)
 $(BUILD_DIR)/driver_%.o: $(DRIVERS_DIR)/impl/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(KERNEL_ELF): $(ENTRY_OBJ) $(KERNEL_OBJ) $(LIBK_OBJ) $(DRIVERS_OBJ) | $(BUILD_DIR)
+$(BUILD_DIR)/component_%.o: $(KERNEL_DIR)/components/impl/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(KERNEL_ELF): $(ENTRY_OBJ) $(KERNEL_OBJ) $(LIBK_OBJ) $(DRIVERS_OBJ) $(KERNEL_COMPONENTS_OBJ) | $(BUILD_DIR)
 	$(LD) $(LDFLAGS) -o $@ $^
 
 $(KERNEL_BIN): $(KERNEL_ELF)
