@@ -6,8 +6,6 @@
 #define __KIO_H__
 
 #include "kdef.h"
-#include "memory.h"
-#include "string.h"
 
 typedef __builtin_va_list va_list;
 #define va_start(v,l)   __builtin_va_start(v,l)

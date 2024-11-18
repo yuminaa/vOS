@@ -31,7 +31,7 @@ start:
 ; but has some extras & some stuff removed
 load_kernel:
     mov ah, 0x02            ; BIOS read sector function
-    mov al, 9               ; read 9 sectors / time
+    mov al, 64              ; read 9 sectors / time
     mov ch, 0               ; cylinder number
     mov cl, 5               ; start from sector 5
     mov dh, 0               ; Head number

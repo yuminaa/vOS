@@ -11,7 +11,7 @@
  * @count: Number of bytes to fill
  * @return: A pointer to the memory area s
  */
-void *memset(void *s, int c, size_t count)
+void* memset(void *s, const int c, size_t count)
 {
     uint8_t *xs = s;
     uint8_t b = c;
@@ -23,7 +23,7 @@ void *memset(void *s, int c, size_t count)
     }
     
     // Fill first few bytes to align to word boundary
-    size_t align = -(uintptr_t)xs & (sizeof(size_t)-1);
+    size_t align = -(uintptr_t)xs & (sizeof(size_t) - 1);
     count -= align;
     while (align--)
         *xs++ = b;
@@ -57,7 +57,7 @@ void *memset(void *s, int c, size_t count)
  * @return: A pointer to dest
  * Note: The memory areas must not overlap
  */
-void *memcpy(void *dest, const void *src, size_t count)
+void* memcpy(void *dest, const void *src, size_t count)
 {
     uint8_t *d = dest;
     const uint8_t *s = src;
@@ -106,7 +106,6 @@ int memcmp(const void *cs, const void *ct, size_t count)
 {
     const uint8_t *s1 = cs;
     const uint8_t *s2 = ct;
-
     if (count < 8) 
     {
         while (count--)
@@ -149,7 +148,7 @@ int memcmp(const void *cs, const void *ct, size_t count)
         count -= sizeof(size_t);
     }
     
-    /* Compare remaining bytes */
+    // Compare remaining bytes
     s1 = (const uint8_t *)w1;
     s2 = (const uint8_t *)w2;
     while (count--) 
@@ -161,4 +160,14 @@ int memcmp(const void *cs, const void *ct, size_t count)
     }
     
     return 0;
+}
+
+void* kmalloc(size_t __sz)
+{
+
+}
+
+void kfree(void* __p)
+{
+
 }

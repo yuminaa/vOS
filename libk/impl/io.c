@@ -1,4 +1,10 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #include "../io.h"
+#include "../memory.h"
+#include "../string.h"
 
 #define VGA_MEMORY ((uint16_t*)0xFFFFFFFF800B8000)
 #define VGA_WIDTH 80
@@ -34,7 +40,7 @@ static void vga_scroll()
     vga_row--;
 }
 
-void vga_putchar(char c)
+void vga_putchar(const char c)
 {
     switch (c) 
     {
