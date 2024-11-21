@@ -1,9 +1,8 @@
 #include "../init.h"
 #include "../cpu.h"
 #include "../port.h"
-
-#define GDT_ENTRIES 7
-#define IDT_ENTRIES 256
+#include "../paging.h"
+#include "../../libk/io.h"
 
 static struct gdt_entry gdt[GDT_ENTRIES];
 static struct tss_entry tss;
@@ -32,29 +31,20 @@ static void tss_set_gate(uint64_t num, uint64_t base, uint32_t limit, uint8_t ac
     gdt[num].base_high = (tss_base >> 24) & 0xFF;
 }
 
-void init_gdt(void)
+void init_gdt()
 {
     gdtp.limit = (sizeof(struct gdt_entry) * GDT_ENTRIES) - 1;
     gdtp.base = (uint64_t)&gdt;
 
-    // Null descriptor
-    gdt_set_gate(0, 0, 0, 0, 0);
-    // Kernel code segment
-    gdt_set_gate(1, 0, 0xFFFFF, 0x9A, 0xA0);
-    // Kernel data segment
-    gdt_set_gate(2, 0, 0xFFFFF, 0x92, 0xA0);
-    // User code segment
-    gdt_set_gate(3, 0, 0xFFFFF, 0xFA, 0xA0);
-    // User data segment
-    gdt_set_gate(4, 0, 0xFFFFF, 0xF2, 0xA0);
-    // TSS
-    tss_set_gate(5, 0, sizeof(struct tss_entry), 0x89);
+    gdt_set_gate(0, 0, 0, 0, 0); // Null descriptor
+    gdt_set_gate(1, 0, 0xFFFFF, 0x9A, 0xA0); // Kernel code segment
+    gdt_set_gate(2, 0, 0xFFFFF, 0x92, 0xA0); // Kernel data segment
+    gdt_set_gate(3, 0, 0xFFFFF, 0xFA, 0xA0); // User code segment
+    gdt_set_gate(4, 0, 0xFFFFF, 0xF2, 0xA0); // User data segment
+    tss_set_gate(5, 0, sizeof(struct tss_entry), 0x89); // TSS
 
-    // Load GDT
-    __asm__ volatile ("lgdt %0" : : "m"(gdtp));
-    
-    // Reload segments
-    __asm__ volatile (
+    __asm__ volatile ("lgdt %0" : : "m"(gdtp)); // Load GDT
+    __asm__ volatile (      // Reload segments
         "pushq $0x08\n"
         "pushq $reload_cs\n"
         "retfq\n"
@@ -74,7 +64,7 @@ void idt_set_gate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags, uint8
     idt[num].base_middle = (base >> 16) & 0xFFFF;
     idt[num].base_high = (base >> 32) & 0xFFFFFFFF;
     idt[num].selector = sel;
-    idt[num].ist = ist;          // Add this
+    idt[num].ist = ist;
     idt[num].flags = flags;
     idt[num].reserved = 0;
 }
@@ -112,8 +102,7 @@ void init_cpu()
         __asm__ volatile("hlt");
     
     if (!cpu_has_feature(CPU_FEATURE_MSR)) 
-        // Handle missing MSR
-        __asm__ volatile("hlt");
+        __asm__ volatile("hlt"); // Handle missing MSR support (later)
 
     uint64_t cr4;
     __asm__ volatile("mov %%cr4, %0" : "=r"(cr4));
@@ -122,25 +111,30 @@ void init_cpu()
     __asm__ volatile("mov %0, %%cr4" :: "r"(cr4));
 }
 
-void init_pic()
+void apic_write(uint32_t reg, uint32_t value) 
 {
-    // ICW1: Start initialization and tell PICs we will send ICW4
-    outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
-    outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
+    volatile uint32_t *apic = (volatile uint32_t *)(uintptr_t)APIC_VIRT_BASE;
+    apic[reg >> 2] = value;
+}
+
+uint32_t apic_read(uint32_t reg)
+{
+    volatile uint32_t *apic = (volatile uint32_t *)(uintptr_t)APIC_VIRT_BASE;
+    return apic[reg >> 2];
+}
+
+void init_apic() 
+{
+    uint32_t low, high;
+    __asm__ volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(APIC_BASE_MSR));
+    uint64_t phys_base = ((uint64_t)high << 32) | (low & 0xFFFFF000);
     
-    // ICW2: Set vector offset
-    outb(PIC1_DATA, 0x20);    // IRQ 0-7: interrupts 32-39
-    outb(PIC2_DATA, 0x28);    // IRQ 8-15: interrupts 40-47
-    
-    // ICW3: Configure cascading
-    outb(PIC1_DATA, 0x04);    // Tell Master PIC that there is a slave at IRQ2 (0000 0100)
-    outb(PIC2_DATA, 0x02);    // Tell Slave PIC its cascade identity (0000 0010)
-    
-    // ICW4: Set 8086 mode
-    outb(PIC1_DATA, ICW4_8086);
-    outb(PIC2_DATA, ICW4_8086);
-    
-    // Mask all interrupts
-    outb(PIC1_DATA, 0xFF);
-    outb(PIC2_DATA, 0xFF);
+    low = (uint32_t)(phys_base | APIC_BASE_MSR_ENABLE);
+    __asm__ volatile("wrmsr" : : "c"(APIC_BASE_MSR), "a"(low), "d"(high));
+
+    uint32_t id = apic_read(APIC_ID_REG);
+    uint32_t svr = apic_read(APIC_SPURIOUS_REG);
+    apic_write(APIC_SPURIOUS_REG, svr | 0x100);
+
+    svr = apic_read(APIC_SPURIOUS_REG);
 }

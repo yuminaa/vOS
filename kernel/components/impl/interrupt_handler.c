@@ -3,6 +3,7 @@
 #include "../../../drivers/port.h"
 #include "../../../drivers/init.h"
 #include "../../../drivers/timer.h"
+#include "../../../drivers/paging.h"
 
 static const char scancode_to_ascii[] = {
     0,   // 0x00 - Error or NULL
@@ -190,21 +191,32 @@ void exception_page_fault(interrupt_frame_t* frame, uint64_t error)
     
     printf("PAGE FAULT\n");
     printf("Error code: %llx\n", error);
-    printf("Fault address: 0x%llx\n", fault_addr);
-    printf("RIP: 0x%llx\n", frame->ip);
+    printf("Fault address: %llx\n", fault_addr);
+    printf("RIP: %llx\n", frame->ip);
     
+    printf("Fault details:\n");
     if (!(error & 0x1)) 
-        printf("Page not present\n");
-    if (error & 0x2) 
-        printf("Write access\n");
-    if (error & 0x4) 
-        printf("User mode access\n");
-    if (error & 0x8) 
-        printf("Reserved bits overwritten\n");
-    if (error & 0x10) 
-        printf("Instruction fetch\n");
+    {
+        printf("- Page not present\n");
+        
+        uint64_t pml4_idx = (fault_addr >> 39) & 0x1FF;
+        uint64_t pdp_idx = (fault_addr >> 30) & 0x1FF;
+        uint64_t pd_idx = (fault_addr >> 21) & 0x1FF;
+        
+        page_tb_t* pml4 = (page_tb_t*)0x1000;
+        printf("PML4[%d] = %llx\n", pml4_idx, pml4->entries[pml4_idx]);
+        
+        if (pml4->entries[pml4_idx] & PAGE_PRESENT)
+        {
+            page_tb_t* pdp = (page_tb_t*)(pml4->entries[pml4_idx] & ~0xFFF);
+            printf("PDP[%d] = %llx\n", pdp_idx, pdp->entries[pdp_idx]);
+        }
+    }
+    printf("\nAttempted access near:\n");
+    printf("Page aligned address: %llx\n", fault_addr & ~0xFFF);
+    printf("Offset in page: %x\n", fault_addr & 0xFFF);
     
-    while (true) 
+    while(1) 
         __asm__("hlt");
 }
 

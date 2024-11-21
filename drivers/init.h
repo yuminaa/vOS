@@ -1,17 +1,12 @@
 #ifndef __KINIT_H__
 #define __KINIT_H__
 
-#define PIC1_COMMAND    0x20    // Command port for PIC1
-#define PIC1_DATA       0x21    // Data port for PIC1
-
-// PIC2 (Slave PIC)
-#define PIC2_COMMAND    0xA0    // Command port for PIC2
-#define PIC2_DATA       0xA1    // Data port for PIC2
-
-// Initialization Command Words
-#define ICW1_ICW4       0x01    // ICW4 needed
-#define ICW1_INIT       0x10    // Initialization
-#define ICW4_8086       0x01    // 8086/88 mode
+#define APIC_BASE_MSR 0x1B
+#define APIC_BASE_MSR_ENABLE 0x800
+#define APIC_ID_REG 0x20
+#define APIC_SPURIOUS_REG 0xF0
+#define GDT_ENTRIES 7
+#define IDT_ENTRIES 256
 
 #include "../libk/kdef.h"
 
@@ -64,7 +59,9 @@ struct idt_ptr
 void init_gdt();
 void init_idt();
 void init_cpu();
-void init_pic();
+void apic_write(uint32_t reg, uint32_t value);
+uint32_t apic_read(uint32_t reg);
+void init_apic();
 void idt_set_gate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags, uint8_t ist);
 void set_kernel_stack(uint64_t stack);
 void set_ist(int ist_num, uint64_t stack);

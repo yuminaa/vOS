@@ -10,6 +10,7 @@
 #include "../drivers/init.h"
 #include "../libk/io.h"
 #include "../drivers/timer.h"
+#include "../drivers/paging.h"
 
 void clear_vga_buffer(uint8_t color)
 {
@@ -20,22 +21,24 @@ void clear_vga_buffer(uint8_t color)
 
 void kernel_main()
 {
-    __asm__ volatile("cli"); // Turn off the interrupt
+    __asm__ volatile("cli"); 
     
+    clear_vga_buffer(0x0F);
     init_cpu();
     init_gdt();
+    init_paging();
     init_idt();
     init_interrupt_handlers();
-    init_pic();
-    init_timer(100); // 1 msg every second
-    // enable_irq(0); // Enable timer; not needed at the moment; will use during thread scheduling
-    enable_irq(1); // Enable keyboard
-    clear_vga_buffer(0x0F);
+    init_apic();
+    init_timer(100);
 
-    printf("vOS Kernel initialized\n");
-    printf("Hello from vOS kernel\n\n\n");
-    __asm__ volatile("sti"); // Turn on the interrupt
+    printf("All initialized, enabling interrupts\n");
+    __asm__ volatile("sti");
     
-    while (1)
+    printf(".");
+    printf(".");
+    printf(".");
+    
+    while(1) 
         __asm__("hlt");
 }

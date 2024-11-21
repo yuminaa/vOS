@@ -1,30 +1,22 @@
 #include "../timer.h"
-#include "../port.h"
+#include "../init.h"
 #include "../../libk/io.h"
 
 static volatile uint64_t timer_ticks = 0;
 
 void init_timer(uint32_t frequency)
 {
-    uint32_t divisor = PIT_FREQUENCY / frequency;
-    
-    outb(PIT_COMMAND, PIT_SET_COMMAND);
-    outb(PIT_CHANNEL0, divisor & 0xFF);
-    outb(PIT_CHANNEL0, divisor >> 8);
+    apic_write(APIC_TIMER_DIV, 0x3);
+    apic_write(APIC_TIMER_INIT, 0x100000);
+    apic_write(APIC_LVT_TIMER, (1 << 17) | 32);
 }
 
 void timer_tick()
 {
-    timer_ticks++;
-    if (timer_ticks % 100 == 0)
-        printf("Tick: %llu\n", timer_ticks);
+    apic_write(APIC_EOI, 0);
 }
 
 uint64_t get_ticks()
 {
-    uint64_t ticks;
-    __asm__ volatile("cli");
-    ticks = timer_ticks;
-    __asm__ volatile("sti");
-    return ticks;
+    return timer_ticks;
 }

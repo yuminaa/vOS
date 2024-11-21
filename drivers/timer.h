@@ -3,10 +3,10 @@
 
 #include "../libk/kdef.h"
 
-#define PIT_CHANNEL0    0x40
-#define PIT_COMMAND     0x43
-#define PIT_FREQUENCY   1193180
-#define PIT_SET_COMMAND 0x36
+#define APIC_TIMER_DIV  0x3E0
+#define APIC_TIMER_INIT 0x380
+#define APIC_LVT_TIMER  0x320
+#define APIC_EOI        0xB0
 
 void init_timer(uint32_t frequency);
 uint64_t get_ticks();
