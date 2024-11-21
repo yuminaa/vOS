@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #ifndef __KINTERRUPT_HANDLER_H__
 #define __KINTERRUPT_HANDLER_H__
 

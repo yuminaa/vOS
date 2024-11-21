@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #ifndef __KINIT_H__
 #define __KINIT_H__
 

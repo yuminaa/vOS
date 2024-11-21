@@ -89,7 +89,6 @@ void puts(const char* str)
     putc('\n');
 }
 
-// Convert unsigned int to string
 static void utoa(uint64_t value, char* buf, int base, bool uppercase)
 {
     char tmp[MAX_NUMBER_LENGTH];
@@ -103,7 +102,6 @@ static void utoa(uint64_t value, char* buf, int base, bool uppercase)
         return;
     }
 
-    // Convert digits
     do 
     {
         *ptr++ = chars[value % base];
@@ -111,13 +109,11 @@ static void utoa(uint64_t value, char* buf, int base, bool uppercase)
     } 
     while (value);
 
-    // Reverse the string
     while (ptr > tmp)
         *buf++ = *--ptr;
     *buf = '\0';
 }
 
-// Convert signed int to string
 static void itoa(int64_t value, char* buf, int base)
 {
     if (value < 0) 
@@ -133,156 +129,166 @@ static void itoa(int64_t value, char* buf, int base)
 
 int printf(const char* format, ...)
 {
-   va_list args;
-   va_start(args, format);
-   int ret = 0;
-   char num_buf[MAX_NUMBER_LENGTH];
+    va_list args;
+    va_start(args, format);
+    int ret = 0;
+    char num_buf[MAX_NUMBER_LENGTH];
 
-   while (*format)
-   {
-       if (*format != '%') 
-       {
-           putc(*format++);
-           ret++;
-           continue;
-       }
+    while (*format)
+    {
+        if (*format != '%') 
+        {
+            putc(*format++);
+            ret++;
+            continue;
+        }
 
-       format++; // Skip '%'
-
-       // Handle length modifiers
-       bool is_long_long = false;
-       if (*format == 'l') {
-           format++;
-           if (*format == 'l') {
-               is_long_long = true;
-               format++;
-           }
-       }
+        format++;
+        bool is_long_long = false;
+        if (*format == 'l') 
+        {
+            format++;
+            if (*format == 'l') 
+            {
+                is_long_long = true;
+                format++;
+            }
+        }
        
-       switch (*format) 
-       {
-           case 'c': 
-           {
-               char c = va_arg(args, int);
-               putc(c);
-               ret++;
-               break;
-           }
-           case 's':
-           {
-               char* s = va_arg(args, char*);
-               if (!s) s = "(null)";
-               while (*s) 
-               {
-                   putc(*s++);
-                   ret++;
-               }
-               break;
-           }
-           case 'd':
-           case 'i': 
-           {
-               int64_t num;
-               if (is_long_long) {
-                   num = va_arg(args, int64_t);
-               } else {
-                   num = va_arg(args, int);
-               }
-               itoa(num, num_buf, 10);
-               char* s = num_buf;
-               while (*s) 
-               {
-                   putc(*s++);
-                   ret++;
-               }
-               break;
-           }
-           case 'u': 
-           {
-               uint64_t num;
-               if (is_long_long) {
-                   num = va_arg(args, uint64_t);
-               } else {
-                   num = va_arg(args, unsigned int);
-               }
-               utoa(num, num_buf, 10, false);
-               char* s = num_buf;
-               while (*s) 
-               {
-                   putc(*s++);
-                   ret++;
-               }
-               break;
-           }
-           case 'x':
-           case 'X': 
-           {
-               uint64_t num;
-               if (is_long_long) {
-                   num = va_arg(args, uint64_t);
-               } else {
-                   num = va_arg(args, unsigned int);
-               }
-               // Print 0x prefix
-               putc('0');
-               putc('x');
-               ret += 2;
-               
-               utoa(num, num_buf, 16, *format == 'X');
-               
-               // For 64-bit values, pad to 16 digits
-               if (is_long_long) {
-                   size_t len = strlen(num_buf);
-                   while (len < 16) {
-                       putc('0');
-                       ret++;
-                       len++;
-                   }
-               }
-               
-               char* s = num_buf;
-               while (*s) {
-                   putc(*s++);
-                   ret++;
-               }
-               break;
-           }
-           case 'p': 
-           {
-               void* ptr = va_arg(args, void*);
-               putc('0');
-               putc('x');
-               ret += 2;
-               utoa((uint64_t)ptr, num_buf, 16, true);
-               // Pad to 16 digits
-               size_t len = strlen(num_buf);
-               while (len < 16) {
-                   putc('0');
-                   ret++;
-                   len++;
-               }
-               char* s = num_buf;
-               while (*s) {
-                   putc(*s++);
-                   ret++;
-               }
-               break;
-           }
-           case '%':
-               putc('%');
-               ret++;
-               break;
-           default:
-               putc('%');
-               putc(*format);
-               ret += 2;
-               break;
-       }
-       format++;
-   }
+        switch (*format) 
+        {
+            case 'c': 
+            {
+                char c = va_arg(args, int);
+                putc(c);
+                ret++;
+                break;
+            }
+            case 's':
+            {
+                char* s = va_arg(args, char*);
+                if (!s) s = "(null)";
+                while (*s) 
+                {
+                    putc(*s++);
+                    ret++;
+                }
+                break;
+            }
+            case 'd':
+            case 'i': 
+            {
+                int64_t num;
+                if (is_long_long) 
+                {
+                    num = va_arg(args, int64_t);
+                } 
+                else 
+                {
+                    num = va_arg(args, int);
+                }
+                itoa(num, num_buf, 10);
+                char* s = num_buf;
+                while (*s) 
+                {
+                    putc(*s++);
+                    ret++;
+                }
+                break;
+            }
+            case 'u': 
+            {
+                uint64_t num;
+                if (is_long_long) 
+                {
+                    num = va_arg(args, uint64_t);
+                } 
+                else 
+                {
+                    num = va_arg(args, unsigned int);
+                }
+                utoa(num, num_buf, 10, false);
+                char* s = num_buf;
+                while (*s) 
+                {
+                    putc(*s++);
+                    ret++;
+                }
+                break;
+            }
+            case 'x':
+            case 'X': 
+            {
+                uint64_t num;
+                if (is_long_long) 
+                {
+                    num = va_arg(args, uint64_t);
+                } 
+                else 
+                {
+                    num = va_arg(args, unsigned int);
+                }
+                putc('0');
+                putc('x');
+                ret += 2;
+                
+                utoa(num, num_buf, 16, *format == 'X');
+                if (is_long_long) 
+                {
+                    size_t len = strlen(num_buf);
+                    while (len < 16)
+                    {
+                        putc('0');
+                        ret++;
+                        len++;
+                    }
+                }
+                
+                char* s = num_buf;
+                while (*s) 
+                {
+                    putc(*s++);
+                    ret++;
+                }
+                break;
+            }
+            case 'p': 
+            {
+                void* ptr = va_arg(args, void*);
+                putc('0');
+                putc('x');
+                ret += 2;
+                utoa((uint64_t)ptr, num_buf, 16, true);
+                size_t len = strlen(num_buf);
+                while (len < 16) 
+                {
+                    putc('0');
+                    ret++;
+                    len++;
+                }
+                char* s = num_buf;
+                while (*s) 
+                {
+                    putc(*s++);
+                    ret++;
+                }
+                break;
+            }
+            case '%':
+                putc('%');
+                ret++;
+                break;
+            default:
+                putc('%');
+                putc(*format);
+                ret += 2;
+                break;
+        }
+        format++;
+    }
 
-   va_end(args);
-   return ret;
+    va_end(args);
+    return ret;
 }
 
 int snprintf(char* buf, size_t size, const char* fmt, ...)

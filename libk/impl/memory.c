@@ -161,13 +161,3 @@ int memcmp(const void *cs, const void *ct, size_t count)
     
     return 0;
 }
-
-void* kmalloc(size_t __sz)
-{
-
-}
-
-void kfree(void* __p)
-{
-
-}

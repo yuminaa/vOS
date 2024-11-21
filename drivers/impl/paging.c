@@ -1,3 +1,9 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
+// NO PRINTF SHOULD BE BETWEEN THE CODE
+
 #include "../paging.h"
 #include "../libk/io.h"
 

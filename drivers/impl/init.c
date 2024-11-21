@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #include "../init.h"
 #include "../cpu.h"
 #include "../port.h"
@@ -84,8 +88,8 @@ void init_idt()
     // Clear IDT
     for (int i = 0; i < IDT_ENTRIES; i++)
         idt_set_gate(i, 0, 0x08, 0x8E, 0);
-    // Load IDT
-    __asm__ volatile ("lidt %0" : : "m"(idtp));
+    
+    __asm__ volatile ("lidt %0" : : "m"(idtp)); // Load IDT
 }
 
 void set_kernel_stack(uint64_t stack)

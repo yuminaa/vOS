@@ -167,21 +167,24 @@ void exception_segment_not_present(interrupt_frame_t* frame, uint64_t error)
 {
     printf("EXCEPTION: Segment Not Present (Error: %llx)\n", error);
     printf("RIP: 0x%llx\n", frame->ip);
-    for(;;) __asm__("hlt");
+    while (true) 
+        __asm__("hlt");
 }
 
 void exception_stack_segment(interrupt_frame_t* frame, uint64_t error)
 {
     printf("EXCEPTION: Stack Segment Fault (Error: %llx)\n", error);
     printf("RIP: 0x%llx\n", frame->ip);
-    for(;;) __asm__("hlt");
+    while (true) 
+        __asm__("hlt");
 }
 
 void exception_general_protection(interrupt_frame_t* frame, uint64_t error)
 {
     printf("EXCEPTION: General Protection Fault (Error: %llx)\n", error);
     printf("RIP: 0x%llx\n", frame->ip);
-    for(;;) __asm__("hlt");
+    while (true) 
+        __asm__("hlt");
 }
 
 void exception_page_fault(interrupt_frame_t* frame, uint64_t error)
@@ -256,7 +259,6 @@ void exception_security(interrupt_frame_t* frame, uint64_t error)
         __asm__("hlt");
 }
 
-// PIC helper functions
 static inline void pic_send_eoi(unsigned char irq) 
 {
     if(irq >= 8)

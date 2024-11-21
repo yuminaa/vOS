@@ -1,5 +1,9 @@
-#ifndef __KPORT_H
-#define __KPORT_H
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
+#ifndef __KPORT_H__
+#define __KPORT_H__
 
 #include "../libk/kdef.h"
 

@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #include "../port.h"
 
 void outb(uint16_t port, uint8_t val) 

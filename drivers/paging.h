@@ -1,3 +1,7 @@
+// Part of the vOS project
+// Licensed under MIT License
+// See LICENSE for more information
+
 #ifndef __KPAGING_H__
 #define __KPAGING_H__
 
